@@ -1,9 +1,9 @@
-import LeafletViewer from './components/LeafletViewer';
+import ImageTransformMap from './components/ImageTransformMap';
 
 export default function Home() {
   return (
     <div className="h-screen">
-      <LeafletViewer />
+      <ImageTransformMap />
     </div>
   );
 }
