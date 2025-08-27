@@ -1,5 +1,9 @@
 import LeafletViewer from './components/LeafletViewer';
 
 export default function Home() {
-  return <LeafletViewer />;
+  return (
+    <div className="h-screen">
+      <LeafletViewer />
+    </div>
+  );
 }

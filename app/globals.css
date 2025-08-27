@@ -1,201 +1,30 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Ensure full viewport height and no margins */
+html, body, #__next { 
+  height: 100%; 
+}
+body { 
+  margin: 0; 
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-/* Map container styles */
-.leaflet-container {
-  z-index: 1;
-}
-
-/* Transparency panel styles - ensure visibility over map */
-.transparency-panel {
-  z-index: 1000 !important;
-  pointer-events: auto !important;
-  background: rgba(255, 255, 255, 0.98) !important;
-  backdrop-filter: blur(12px) !important;
-  border: 3px solid #3b82f6 !important;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
-  border-radius: 12px !important;
-  user-select: none !important;
-}
-
-.transparency-panel:hover {
-  background: rgba(255, 255, 255, 1) !important;
-  transform: scale(1.02) !important;
-  transition: all 0.2s ease !important;
-}
-
-/* Ensure slider container doesn't interfere */
-.transparency-panel .relative {
-  pointer-events: auto !important;
-  user-select: none !important;
-}
-
-.transparency-panel input[type="range"] {
-  pointer-events: auto !important;
-  user-select: none !important;
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-}
-
-/* Custom slider styles */
-.slider {
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  cursor: pointer;
-  z-index: 1001 !important;
-  position: relative;
-  height: 20px !important;
-  width: 100% !important;
+/* Make the DistortableImage toolbar popup match the demo */
+.leaflet-container .leaflet-toolbar-popup .leaflet-popup-content { 
   margin: 0 !important;
+}
+.leaflet-container .leaflet-toolbar-popup .leaflet-popup-content-wrapper {
   padding: 0 !important;
-  touch-action: pan-x !important;
-  -webkit-touch-callout: none !important;
-  -webkit-tap-highlight-color: transparent !important;
+  border-radius: 6px;           /* same rounded look */
+}
+.leaflet-container .leaflet-toolbar-popup .leaflet-popup-tip {
+  display: none;                /* demo usually hides the arrow */
 }
 
-/* Image overlay cursor styles */
-.leaflet-image-overlay {
-  cursor: default;
-}
-
-.leaflet-image-overlay:hover {
-  cursor: move;
-}
-
-/* When Ctrl is pressed, show move cursor */
-.leaflet-image-overlay.ctrl-pressed {
-  cursor: grab !important;
-}
-
-.leaflet-image-overlay.ctrl-pressed:hover {
-  cursor: grab !important;
-}
-
-.slider::-webkit-slider-track {
-  background: #1e40af !important;
-  height: 16px !important;
-  border-radius: 8px !important;
-  border: 2px solid #3b82f6 !important;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  cursor: pointer !important;
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  background: #3b82f6 !important;
-  height: 28px !important;
-  width: 28px !important;
-  border-radius: 50% !important;
-  border: 3px solid #ffffff !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
-  transition: all 0.2s ease !important;
-  cursor: grab !important;
-}
-
-.slider::-webkit-slider-thumb:active {
-  cursor: grabbing !important;
-  transform: scale(1.1) !important;
-}
-
-.slider::-webkit-slider-thumb:hover {
-  background: #2563eb !important;
-  transform: scale(1.15) !important;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3) !important;
-}
-
-.slider::-moz-range-track {
-  background: #1e40af !important;
-  height: 16px !important;
-  border-radius: 8px !important;
-  border: 2px solid #3b82f6 !important;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  cursor: pointer !important;
-}
-
-.slider::-moz-range-thumb {
-  background: #3b82f6 !important;
-  height: 28px !important;
-  width: 28px !important;
-  border-radius: 50% !important;
-  border: 3px solid #ffffff !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
-  cursor: grab !important;
-  transition: all 0.2s ease !important;
-}
-
-.slider::-moz-range-thumb:active {
-  cursor: grabbing !important;
-  transform: scale(1.1) !important;
-}
-
-.slider::-moz-range-thumb:hover {
-  background: #2563eb !important;
-  transform: scale(1.15) !important;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* Resize handle styles */
-.resize-handle {
-  z-index: 1001 !important;
-}
-
-.corner-handle {
-  z-index: 1001 !important;
-}
-
-.edge-handle {
-  z-index: 1001 !important;
-}
-
-/* Move handle styles */
-.move-handle {
-  z-index: 1001 !important;
-}
-
-/* Rotation handle styles */
-.rotate-handle {
-  z-index: 1001 !important;
-}
-
-/* Polygon tooltip styles */
-.polygon-tooltip {
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.polygon-tooltip::before {
-  border-top-color: rgba(0, 0, 0, 0.8);
+/* Optional: keep icons snug */
+.leaflet-container .leaflet-toolbar a.leaflet-toolbar-icon {
+  box-sizing: content-box;
+  border: 0;
+  margin: 0;
 }
