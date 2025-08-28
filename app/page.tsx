@@ -8,6 +8,7 @@ type FileType = 'image' | 'document' | 'other';
 export default function LandingPage() {
   const [selectedFileType, setSelectedFileType] = useState<FileType>('image');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [postcode, setPostcode] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
@@ -17,6 +18,7 @@ export default function LandingPage() {
     const newType = event.target.value as FileType;
     setSelectedFileType(newType);
     setSelectedFile(null);
+    setPostcode('');
     setUploadedImageUrl(null);
     setUploadError(null);
   };
@@ -40,6 +42,12 @@ export default function LandingPage() {
 
   const handleUpload = async () => {
     if (!selectedFile) return;
+
+    // For images, require postcode
+    if (selectedFileType === 'image' && !postcode.trim()) {
+      setUploadError('Please enter a postcode for image files');
+      return;
+    }
 
     setIsUploading(true);
     setUploadError(null);
@@ -75,9 +83,10 @@ export default function LandingPage() {
   };
 
   const handleContinue = () => {
-    if (uploadedImageUrl && selectedFileType === 'image') {
-      // Store the image URL in sessionStorage and navigate to map
+    if (uploadedImageUrl && selectedFileType === 'image' && postcode.trim()) {
+      // Store the image URL and postcode in sessionStorage and navigate to map
       sessionStorage.setItem('uploadedImageUrl', uploadedImageUrl);
+      sessionStorage.setItem('postcode', postcode.trim());
       router.push('/map');
     }
   };
@@ -145,6 +154,27 @@ export default function LandingPage() {
               }
             </p>
           </div>
+
+          {/* Postcode Input - Only show for images */}
+          {selectedFileType === 'image' && (
+            <div className="mb-6">
+              <label htmlFor="postcode" className="block text-sm font-medium text-gray-700 mb-2">
+                Postcode <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="postcode"
+                value={postcode}
+                onChange={(e) => setPostcode(e.target.value)}
+                placeholder="Enter postcode (e.g., SW1A 1AA)"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                This will center your image on the map at the specified location
+              </p>
+            </div>
+          )}
 
           {/* File Upload Area */}
           <div className="space-y-6">
@@ -253,7 +283,7 @@ export default function LandingPage() {
             {/* Non-image success message */}
             {uploadedImageUrl && selectedFileType !== 'image' && (
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-center space-x-3">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                     <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

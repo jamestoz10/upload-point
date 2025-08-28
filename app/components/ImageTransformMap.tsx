@@ -12,9 +12,10 @@ import type { Map, ImageOverlay, Layer } from 'leaflet';
 
 interface ImageTransformMapProps {
   initialImageUrl?: string | null;
+  postcode?: string | null;
 }
 
-export default function ImageTransformMap({ initialImageUrl }: ImageTransformMapProps) {
+export default function ImageTransformMap({ initialImageUrl, postcode }: ImageTransformMapProps) {
   const mapRef = useRef<Map | null>(null);
   const mapElRef = useRef<HTMLDivElement | null>(null);
 
@@ -25,7 +26,32 @@ export default function ImageTransformMap({ initialImageUrl }: ImageTransformMap
   const [mapReady, setMapReady] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>('Initializing...');
 
-
+  // Function to geocode postcode to coordinates
+  const geocodePostcode = async (postcode: string): Promise<[number, number] | null> => {
+    try {
+      // Using OpenStreetMap Nominatim API for geocoding
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(postcode)}&countrycodes=gb&limit=1`
+      );
+      
+      if (!response.ok) {
+        throw new Error('Geocoding request failed');
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        return [lat, lon];
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn('Geocoding failed:', error);
+      return null;
+    }
+  };
 
   // Helper: add image to map
   const addImageToMap = (imageUrl: string) => {
@@ -48,11 +74,28 @@ export default function ImageTransformMap({ initialImageUrl }: ImageTransformMap
     }
 
     if (typeof (L as any).distortableImageOverlay === 'function') {
+      // Get current map center and create bounds around it
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      
+      // Create bounds around the center point for the image
+      // Adjust the size based on zoom level to make image appropriately sized
+      const latOffset = 0.005 / Math.pow(2, 15 - zoom); // Better size calculation
+      const lngOffset = 0.005 / Math.pow(2, 15 - zoom);
+      
+      const bounds = [
+        [center.lat - latOffset, center.lng - lngOffset] as [number, number],
+        [center.lat + latOffset, center.lng + lngOffset] as [number, number]
+      ];
+
+      setDebugInfo(`Adding image at center: ${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`);
+
       // Create unselected; add first, then select when loaded
       const img = (L as any).distortableImageOverlay(imageUrl, {
         selected: false,
         mode: 'distort',
         suppressToolbar: false,
+        bounds: bounds
       });
 
       img.addTo(map);
@@ -60,6 +103,7 @@ export default function ImageTransformMap({ initialImageUrl }: ImageTransformMap
       img.once('load', () => {
         try {
           img.editing?.select?.();
+          setDebugInfo(`Image loaded and selected at ${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`);
 
           // Optional extra tools (guarded)
           if ((L as any).RestoreAction && img.editing?.addTool) {
@@ -84,8 +128,21 @@ export default function ImageTransformMap({ initialImageUrl }: ImageTransformMap
 
       currentImageRef.current = img as L.DistortableImageOverlay;
     } else {
-      // Fallback: plain image overlay
-      const bounds = map.getBounds();
+      // Fallback: plain image overlay at current center
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      
+      // Create bounds around the center point
+      const latOffset = 0.005 / Math.pow(2, 15 - zoom);
+      const lngOffset = 0.005 / Math.pow(2, 15 - zoom);
+      
+      const bounds = [
+        [center.lat - latOffset, center.lng - lngOffset] as [number, number],
+        [center.lat + latOffset, center.lng + lngOffset] as [number, number]
+      ];
+      
+      setDebugInfo(`Adding fallback image at center: ${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`);
+      
       const img = L.imageOverlay(imageUrl, bounds).addTo(map);
       currentImageRef.current = img;
     }
@@ -131,7 +188,29 @@ export default function ImageTransformMap({ initialImageUrl }: ImageTransformMap
           !!(L as any).Toolbar2 && typeof (L as any).distortableImageOverlay === 'function';
 
         setDebugInfo('Creating map...');
-        const map = L.map(mapElRef.current!, { center: [51.505, -0.09], zoom: 13 });
+        
+        // If we have a postcode, geocode it first to get the initial coordinates
+        let initialCenter: [number, number] = [51.505, -0.09]; // London as fallback
+        let initialZoom = 13;
+        
+        if (postcode) {
+          setDebugInfo(`Geocoding postcode: ${postcode}...`);
+          const coordinates = await geocodePostcode(postcode);
+          if (coordinates) {
+            const [lat, lon] = coordinates;
+            initialCenter = [lat, lon];
+            initialZoom = 15; // Street level zoom for postcode
+            setDebugInfo(`Map will start at ${postcode} (${lat.toFixed(4)}, ${lon.toFixed(4)})`);
+          } else {
+            setDebugInfo(`Could not geocode postcode: ${postcode}, using default location`);
+          }
+        }
+        
+        const map = L.map(mapElRef.current!, { 
+          center: initialCenter, 
+          zoom: initialZoom,
+          zoomControl: false
+        });
         mapRef.current = map;
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -153,6 +232,7 @@ export default function ImageTransformMap({ initialImageUrl }: ImageTransformMap
 
         setMapReady(true);
         setDebugInfo('Map ready!');
+        
       } catch (e) {
         console.error('Init error:', e);
         setDebugInfo('Init error');
@@ -172,25 +252,22 @@ export default function ImageTransformMap({ initialImageUrl }: ImageTransformMap
         mapRef.current = null;
       }
     };
-  }, []);
+  }, [postcode]);
 
   // Add/replace image when URL becomes available and map/plugins are ready
   useEffect(() => {
     if (initialImageUrl && mapReady && pluginsReadyRef.current) {
-      addImageToMap(initialImageUrl);
+      // Small delay to ensure map centering is complete
+      const timer = setTimeout(() => {
+        addImageToMap(initialImageUrl);
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [initialImageUrl, mapReady]);
+  }, [initialImageUrl, mapReady, postcode]);
 
   return (
     <div className="map-container">
-      {/* Debug Info */}
-      <div className="absolute top-4 right-4 z-[1000] bg-white p-3 rounded-lg shadow-lg border text-sm">
-        <div className="text-gray-600">Status: {debugInfo}</div>
-        {!pluginsReadyRef.current && (
-          <div className="text-amber-600 mt-1">Plugins not attached yet…</div>
-        )}
-      </div>
-
       {/* Map Container */}
       <div ref={mapElRef} style={{ width: '100%', height: '100%' }} />
     </div>

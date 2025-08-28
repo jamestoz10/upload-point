@@ -6,12 +6,14 @@ import ImageTransformMap from '../components/ImageTransformMap';
 
 export default function MapPage() {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [postcode, setPostcode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Get the uploaded image URL from sessionStorage
+    // Get the uploaded image URL and postcode from sessionStorage
     const imageUrl = sessionStorage.getItem('uploadedImageUrl');
+    const storedPostcode = sessionStorage.getItem('postcode');
     
     if (!imageUrl) {
       // No image uploaded, redirect back to landing page
@@ -20,12 +22,14 @@ export default function MapPage() {
     }
 
     setUploadedImageUrl(imageUrl);
+    setPostcode(storedPostcode);
     setIsLoading(false);
   }, [router]);
 
   const handleBackToUpload = () => {
-    // Clear the stored image URL and go back to landing page
+    // Clear the stored data and go back to landing page
     sessionStorage.removeItem('uploadedImageUrl');
+    sessionStorage.removeItem('postcode');
     router.push('/');
   };
 
@@ -57,8 +61,22 @@ export default function MapPage() {
         <span>Back to Upload</span>
       </button>
 
+      {/* Postcode Display */}
+      {postcode && (
+        <div className="absolute top-4 right-4 z-[10000] isolation-auto pointer-events-auto
+                       inline-flex items-center gap-2 px-4 py-2 rounded-xl
+                       bg-white/95 backdrop-blur border border-gray-200 shadow-lg
+                       text-sm font-medium text-gray-800">
+          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>Location: {postcode}</span>
+        </div>
+      )}
+
       {/* Map Component */}
-      <ImageTransformMap initialImageUrl={uploadedImageUrl} />
+      <ImageTransformMap initialImageUrl={uploadedImageUrl} postcode={postcode} />
     </main>
   );
 }
