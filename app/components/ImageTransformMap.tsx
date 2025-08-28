@@ -95,7 +95,21 @@ export default function ImageTransformMap({ initialImageUrl, postcode }: ImageTr
         selected: false,
         mode: 'distort',
         suppressToolbar: false,
-        bounds: bounds
+        bounds: bounds,
+        actions: [
+      // was Remove/Delete(s)       // was ToggleScale
+          (L as any).FreeRotateAction,
+          (L as any).DistortAction,     // new explicit action      // was ToggleRotate
+          // optionally add FreeRotateAction:
+          // (L as any).FreeRotateAction,
+          (L as any).LockAction,        // handles lock/unlock
+          (L as any).BorderAction,      // was ToggleOutline
+          (L as any).OpacityAction,     // was ToggleTransparency
+          (L as any).RestoreAction,
+          // extras if you want:
+          // (L as any).RevertAction,
+          // (L as any).StackAction,
+        ],
       });
 
       img.addTo(map);
