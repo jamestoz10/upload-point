@@ -10,7 +10,11 @@ import 'leaflet-distortableimage/dist/leaflet.distortableimage.css';
 // Import Leaflet types
 import type { Map, ImageOverlay, Layer } from 'leaflet';
 
-export default function ImageTransformMap() {
+interface ImageTransformMapProps {
+  initialImageUrl?: string | null;
+}
+
+export default function ImageTransformMap({ initialImageUrl }: ImageTransformMapProps) {
   const mapRef = useRef<Map | null>(null);
   const mapElRef = useRef<HTMLDivElement | null>(null);
 
@@ -18,42 +22,10 @@ export default function ImageTransformMap() {
   const pluginsReadyRef = useRef(false);
   const currentImageRef = useRef<any>(null);
 
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>('Initializing...');
 
-  // Upload handler (let the effect add the image)
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
 
-    setIsUploading(true);
-    setUploadError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error((errorData as any)?.error || 'Upload failed');
-      }
-
-      const data = await response.json();
-      setUploadedImageUrl(data.url);
-    } catch (error) {
-      setUploadError(error instanceof Error ? error.message : 'Upload failed');
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   // Helper: add image to map
   const addImageToMap = (imageUrl: string) => {
@@ -204,36 +176,19 @@ export default function ImageTransformMap() {
 
   // Add/replace image when URL becomes available and map/plugins are ready
   useEffect(() => {
-    if (uploadedImageUrl && mapReady && pluginsReadyRef.current) {
-      addImageToMap(uploadedImageUrl);
+    if (initialImageUrl && mapReady && pluginsReadyRef.current) {
+      addImageToMap(initialImageUrl);
     }
-  }, [uploadedImageUrl, mapReady]);
+  }, [initialImageUrl, mapReady]);
 
   return (
-    <div className="relative w-full h-full">
-      {/* Upload Controls */}
-      <div className="absolute top-4 left-4 z-[1000] bg-white p-4 rounded-lg shadow-lg border">
-        <h3 className="text-lg font-semibold mb-3 text-gray-800">Upload Image</h3>
-
-        <div className="space-y-3">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            disabled={isUploading}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-
-          {isUploading && <div className="text-blue-600 text-sm">Uploading...</div>}
-          {uploadError && <div className="text-red-600 text-sm">{uploadError}</div>}
-          {uploadedImageUrl && <div className="text-green-600 text-sm">✓ Image uploaded successfully</div>}
-
-          {/* Debug Info */}
-          <div className="text-xs text-gray-500 mt-2">Status: {debugInfo}</div>
-          {!pluginsReadyRef.current && (
-            <div className="text-xs text-amber-600">Plugins not attached yet…</div>
-          )}
-        </div>
+    <div className="map-container">
+      {/* Debug Info */}
+      <div className="absolute top-4 right-4 z-[1000] bg-white p-3 rounded-lg shadow-lg border text-sm">
+        <div className="text-gray-600">Status: {debugInfo}</div>
+        {!pluginsReadyRef.current && (
+          <div className="text-amber-600 mt-1">Plugins not attached yet…</div>
+        )}
       </div>
 
       {/* Map Container */}

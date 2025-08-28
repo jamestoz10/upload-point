@@ -2,29 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Ensure full viewport height and no margins */
+@layer base {
+  html {
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+      "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+}
+
+/* Base layout */
 html, body, #__next { 
   height: 100%; 
 }
 body { 
   margin: 0; 
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* Make the DistortableImage toolbar popup match the demo */
-.leaflet-container .leaflet-toolbar-popup .leaflet-popup-content { 
+/* Resets */
+button, input, select, textarea { 
+  font-family: inherit; 
+  line-height: inherit; 
+}
+*, *::before, *::after { 
+  box-sizing: border-box; 
+}
+
+/* --- LANDING PAGE SCOPE (no Leaflet interference) --- */
+.landing-scope * { 
+  /* Let Tailwind handle fonts naturally */
+}
+
+/* --- MAP SCOPE (all Leaflet tweaks live under .map-scope) --- */
+.map-scope .leaflet-container,
+.map-scope .leaflet-popup,
+.map-scope .leaflet-toolbar,
+.map-scope .leaflet-distortableimage {
+  font-family: inherit;
+}
+
+/* Custom map container styling */
+.map-scope .map-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* DistortableImage toolbar popup like the demo */
+.map-scope .leaflet-toolbar-popup .leaflet-popup-content { 
   margin: 0 !important;
 }
-.leaflet-container .leaflet-toolbar-popup .leaflet-popup-content-wrapper {
+.map-scope .leaflet-toolbar-popup .leaflet-popup-content-wrapper {
   padding: 0 !important;
-  border-radius: 6px;           /* same rounded look */
+  border-radius: 6px;
 }
-.leaflet-container .leaflet-toolbar-popup .leaflet-popup-tip {
-  display: none;                /* demo usually hides the arrow */
+.map-scope .leaflet-toolbar-popup .leaflet-popup-tip {
+  display: none;
 }
 
-/* Optional: keep icons snug */
-.leaflet-container .leaflet-toolbar a.leaflet-toolbar-icon {
+/* Optional: keep toolbar icons snug */
+.map-scope .leaflet-toolbar a.leaflet-toolbar-icon {
   box-sizing: content-box;
   border: 0;
   margin: 0;
 }
+
+
+
