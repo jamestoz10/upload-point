@@ -169,6 +169,7 @@ export default function LandingPage() {
                 placeholder="Enter postcode (e.g., SW1A 1AA)"
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                 required
+                suppressHydrationWarning={true}
               />
               <p className="text-xs text-gray-500 mt-1">
                 This will center your image on the map at the specified location
