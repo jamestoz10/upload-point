@@ -16,6 +16,7 @@ import type { Map, ImageOverlay, Layer } from 'leaflet';
 interface ImageTransformMapProps {
   initialImageUrl?: string | null;
   postcode?: string | null;
+  schoolType?: string | null;
   isEditingDisabled?: boolean;
   currentMode?: 'distort' | 'draw';
 }
@@ -26,8 +27,8 @@ export interface ImageTransformMapRef {
 }
 
 const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProps>(
-  ({ initialImageUrl, postcode, isEditingDisabled, currentMode = 'distort' }, ref) => {
-  console.log('ImageTransformMap rendering', { initialImageUrl, postcode, isEditingDisabled });
+  ({ initialImageUrl, postcode, schoolType, isEditingDisabled, currentMode = 'distort' }, ref) => {
+  console.log('ImageTransformMap rendering', { initialImageUrl, postcode, schoolType, isEditingDisabled });
   const mapRef = useRef<Map | null>(null);
   const mapElRef = useRef<HTMLDivElement | null>(null);
 
@@ -49,24 +50,172 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
   // --- Attributes form state ---
   const [showAttrForm, setShowAttrForm] = useState(false);
   const [activeLayer, setActiveLayer] = useState<any>(null);
+  const [roomTypes, setRoomTypes] = useState<string[]>([]);
+  const [roomSubTypes, setRoomSubTypes] = useState<string[]>([]);
+  const [roomTypeSubTypeMap, setRoomTypeSubTypeMap] = useState<Record<string, string[]>>({});
   const [attrForm, setAttrForm] = useState({
     name: '',
-    category: 'Site boundary',
-    notes: ''
+    roomType: '',
+    roomSubType: ''
   });
 
+  // Load room types and sub types based on school type
+  useEffect(() => {
+    if (schoolType) {
+      loadRoomData(schoolType);
+    }
+  }, [schoolType]);
+
+  // Filter room sub types when room type changes
+  useEffect(() => {
+    if (attrForm.roomType && roomTypeSubTypeMap[attrForm.roomType]) {
+      const availableSubTypes = roomTypeSubTypeMap[attrForm.roomType];
+      setRoomSubTypes(availableSubTypes);
+      console.log(`Room type "${attrForm.roomType}" selected, available sub types:`, availableSubTypes);
+      
+      // Reset room sub type if current selection is not valid for new room type
+      if (!availableSubTypes.includes(attrForm.roomSubType)) {
+        setAttrForm(prev => ({ ...prev, roomSubType: '' }));
+        console.log('Reset room sub type - not valid for selected room type');
+      }
+    } else {
+      setRoomSubTypes([]);
+      setAttrForm(prev => ({ ...prev, roomSubType: '' }));
+      console.log('No room type selected or no sub types available');
+    }
+  }, [attrForm.roomType, roomTypeSubTypeMap]);
+
+  const loadRoomData = async (type: string) => {
+    try {
+      let csvFile = '';
+      switch (type) {
+        case 'primary':
+          csvFile = '/Primary.csv';
+          break;
+        case 'secondary':
+          csvFile = '/Secondary.csv';
+          break;
+        case 'special':
+          csvFile = '/Special.csv';
+          break;
+        default:
+          return;
+      }
+
+      console.log(`Loading room data from ${csvFile} for school type: ${type}`);
+      const response = await fetch(csvFile);
+      if (response.ok) {
+        const csvText = await response.text();
+        const lines = csvText.split('\n');
+        const roomTypesSet = new Set<string>();
+        const subTypesMap: Record<string, Set<string>> = {};
+        
+        // Skip header row and extract room types and sub types
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line) {
+            const columns = line.split(',');
+            if (columns.length >= 1) {
+              const roomType = columns[0].replace(/"/g, '').trim();
+              if (roomType) {
+                roomTypesSet.add(roomType);
+                if (!subTypesMap[roomType]) {
+                  subTypesMap[roomType] = new Set<string>();
+                }
+              }
+            }
+            if (columns.length >= 2) {
+              const roomSubType = columns[1].replace(/"/g, '').trim();
+              if (roomSubType && columns[0]) {
+                const roomType = columns[0].replace(/"/g, '').trim();
+                if (roomType && subTypesMap[roomType]) {
+                  subTypesMap[roomType].add(roomSubType);
+                }
+              }
+            }
+          }
+        }
+        
+        // Convert to arrays
+        const roomTypesArray = Array.from(roomTypesSet).sort();
+        
+        // Convert sub types map to arrays
+        const subTypeMapArray: Record<string, string[]> = {};
+        Object.keys(subTypesMap).forEach(roomType => {
+          subTypeMapArray[roomType] = Array.from(subTypesMap[roomType]).sort();
+        });
+        
+        console.log('Loaded room data:', {
+          roomTypes: roomTypesArray,
+          subTypeMap: subTypeMapArray,
+          totalRoomTypes: roomTypesArray.length,
+          totalSubTypes: Object.values(subTypeMapArray).flat().length
+        });
+        
+        setRoomTypes(roomTypesArray);
+        setRoomTypeSubTypeMap(subTypeMapArray);
+        
+        // Room data loaded successfully
+      }
+    } catch (error) {
+      console.error('Error loading room data:', error);
+      // Keep default room types on error
+    }
+  };
+
   // Helper: attach attributes to a layer + popup
-  const applyAttributesToLayer = (layer: any, attrs: {name?: string; category?: string; notes?: string}) => {
+  const applyAttributesToLayer = (layer: any, attrs: {name?: string; roomType?: string; roomSubType?: string}) => {
     // Ensure a GeoJSON feature holder exists
     if (!layer.feature) layer.feature = { type: 'Feature', properties: {} };
-    layer.feature.properties = { ...layer.feature.properties, ...attrs };
+    
+    // Add timestamp when attributes are applied
+    const timestamp = new Date().toISOString();
+    const propertiesWithTimestamp = { 
+      ...attrs, 
+      timestamp: timestamp,
+      dateAdded: new Date(timestamp).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    };
+    
+    layer.feature.properties = { ...layer.feature.properties, ...propertiesWithTimestamp };
 
-    // Nice popup content
+    // Nice popup content with edit button
     const html = `
-      <div style="min-width: 180px">
-        <div><strong>${attrs.name || 'Unnamed feature'}</strong></div>
-        <div>Category: ${attrs.category || '-'}</div>
-        ${attrs.notes ? `<div style="margin-top:6px">${attrs.notes}</div>` : ''}
+      <div style="min-width: 200px">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="font-weight: bold; color: #1F2937;">${attrs.name || 'Unnamed feature'}</div>
+          <button 
+            onclick="window.editFeatureData('${layer._leaflet_id}')"
+            style="
+              background: #3B82F6; 
+              color: white; 
+              border: none; 
+              border-radius: 4px; 
+              padding: 4px 6px; 
+              cursor: pointer; 
+              font-size: 12px;
+              display: flex;
+              align-items: center;
+              gap: 4px;
+            "
+            title="Edit feature data"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+            Edit
+          </button>
+        </div>
+        ${attrs.roomType ? `<div style="margin-bottom: 4px;"><strong>Room Type:</strong> ${attrs.roomType}</div>` : ''}
+        ${attrs.roomSubType ? `<div style="margin-bottom: 4px;"><strong>Room Sub Type:</strong> ${attrs.roomSubType}</div>` : ''}
+        <div style="margin-top: 8px; padding: 8px; background: #F3F4F6; border-radius: 4px; font-size: 12px; color: #6B7280;">
+          <strong>Added:</strong> ${propertiesWithTimestamp.dateAdded}
+        </div>
       </div>
     `;
     layer.bindPopup(html);
@@ -78,15 +227,79 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
     });
   };
 
-  // Optional: style by category (tweak to taste)
-  const styleLayerByCategory = (layer: any, category: string) => {
-    const colors: Record<string, string> = {
-      'Site boundary': '#3B82F6',
-      'Building': '#10B981',
-      'Playground': '#F59E0B',
-      'Car park': '#8B5CF6',
+  // Function to edit feature data (called from popup)
+  const editFeatureData = (leafletId: string) => {
+    if (!drawnItemsRef.current) return;
+    
+    let targetLayer: any = null;
+    drawnItemsRef.current.eachLayer((layer: any) => {
+      if (layer._leaflet_id === parseInt(leafletId)) {
+        targetLayer = layer;
+      }
+    });
+    
+    if (targetLayer && targetLayer.feature?.properties) {
+      const props = targetLayer.feature.properties;
+      setActiveLayer(targetLayer);
+      setAttrForm({
+        name: props.name || '',
+        roomType: props.roomType || '',
+        roomSubType: props.roomSubType || ''
+      });
+      setShowAttrForm(true);
+      
+      // Close the popup
+      try { targetLayer.closePopup(); } catch {}
+    }
+  };
+
+  // Expose editFeatureData function globally for popup buttons
+  useEffect(() => {
+    (window as any).editFeatureData = editFeatureData;
+    
+    return () => {
+      delete (window as any).editFeatureData;
     };
-    const color = colors[category] || '#3B82F6';
+  }, []);
+
+  // Optional: style by room type (tweak to taste)
+  const styleLayerByRoomType = (layer: any, roomType: string) => {
+    const colors: Record<string, string> = {
+      // Primary school room types
+      'Classroom Areas': '#EF4444',
+      'Specialist Practical Areas': '#8B5CF6',
+      'Hall Studio and Dining Areas': '#F59E0B',
+      'Learning Resource Areas': '#10B981',
+      'Teaching Storage Areas': '#6366F1',
+      'Non Teaching Storage Areas': '#6B7280',
+      'Kitchen Areas': '#DC2626',
+      'Toilet Areas': '#059669',
+      'Plant Areas': '#1F2937',
+      'Circulation Areas': '#7C3AED',
+      // Secondary school room types
+      'ICT and Business Areas': '#2563EB',
+      'Science Areas': '#7C2D12',
+      'Creative Art Areas': '#BE185D',
+      'Design and Tech Areas': '#059669',
+      'PE Basic Teaching Areas': '#DC2626',
+      'Art and DT Resource Areas': '#7C3AED',
+      'SEN and Support Areas': '#F59E0B',
+      // Special school room types
+      'Classrooms': '#EF4444',
+      'Practical Rooms': '#8B5CF6',
+      'Halls, PE, Dining & Social': '#F59E0B',
+      'Staff and Administration': '#2563EB',
+      'Teaching Storage': '#6366F1',
+      'Non-Teaching Storage': '#6B7280',
+      'Toilets & Personal Care': '#059669',
+      'Kitchen': '#DC2626',
+      'Plant': '#1F2937',
+      'Circulation': '#7C3AED',
+      'Supplementary': '#6B7280',
+    };
+    
+    // Use room type color if available, otherwise use a default color
+    const color = roomType && colors[roomType] ? colors[roomType] : '#6B7280';
     if (layer.setStyle) layer.setStyle({ color, weight: 2 });
   };
 
@@ -109,7 +322,7 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
     if (!drawnItemsRef.current) return false;
     let hasConfigured = false;
     drawnItemsRef.current.eachLayer((layer: any) => {
-      if (layer.feature?.properties?.name || layer.feature?.properties?.category) {
+      if (layer.feature?.properties?.name || layer.feature?.properties?.roomType || layer.feature?.properties?.roomSubType) {
         hasConfigured = true;
       }
     });
@@ -430,7 +643,7 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
               
               // Open the attribute form
               setActiveLayer(layer);
-              setAttrForm({ name: '', category: 'Site boundary', notes: '' });
+              setAttrForm({ name: '', roomType: '', roomSubType: '' });
               setShowAttrForm(true);
 
               // Optional: give a temporary popup hint
@@ -671,8 +884,8 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
   }));
 
   return (
-    <div style={{ width: '100%', height: '100%', border: '2px solid red' }}>
-      <div style={{ width: '100%', height: '100%', border: '2px solid blue' }}>
+    <div style={{ width: '100%', height: '100%' }}>
+      <div style={{ width: '100%', height: '100%' }}>
         {/* Attribute form overlay */}
         {showAttrForm && (
           <div
@@ -686,10 +899,26 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
               borderRadius: 8,
               padding: 12,
               boxShadow: '0 6px 24px rgba(0,0,0,0.12)',
-              width: 280
+              width: 240
             }}
           >
-            <div style={{ fontWeight: 700, marginBottom: 8 }}>Feature details</div>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>
+              {activeLayer?.feature?.properties?.timestamp ? 'Edit Feature' : 'Feature Details'}
+            </div>
+            
+            {activeLayer?.feature?.properties?.timestamp && (
+              <div style={{ 
+                fontSize: 11, 
+                color: '#6B7280', 
+                marginBottom: 12, 
+                padding: 6, 
+                background: '#F3F4F6', 
+                borderRadius: 4,
+                fontStyle: 'italic'
+              }}>
+                Created: {activeLayer.feature.properties.dateAdded}
+              </div>
+            )}
 
             <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Name</label>
             <input
@@ -700,27 +929,30 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
               style={{ width: '100%', padding: 8, border: '1px solid #d1d5db', borderRadius: 6, marginBottom: 8 }}
             />
 
-            <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Category</label>
+            <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Room Type</label>
             <select
-              value={attrForm.category}
-              onChange={(e) => setAttrForm((s) => ({ ...s, category: e.target.value }))}
+              value={attrForm.roomType}
+              onChange={(e) => setAttrForm((s) => ({ ...s, roomType: e.target.value }))}
               style={{ width: '100%', padding: 8, border: '1px solid #d1d5db', borderRadius: 6, marginBottom: 8 }}
             >
-              <option>Site boundary</option>
-              <option>Building</option>
-              <option>Playground</option>
-              <option>Car park</option>
-              <option>Other</option>
+              <option value="">Select Room Type</option>
+              {roomTypes.map(roomType => (
+                <option key={roomType} value={roomType}>{roomType}</option>
+              ))}
             </select>
 
-            <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Notes</label>
-            <textarea
-              value={attrForm.notes}
-              onChange={(e) => setAttrForm((s) => ({ ...s, notes: e.target.value }))}
-              placeholder="Any extra info…"
-              rows={3}
+            <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Room Sub Type</label>
+            <select
+              value={attrForm.roomSubType}
+              onChange={(e) => setAttrForm((s) => ({ ...s, roomSubType: e.target.value }))}
               style={{ width: '100%', padding: 8, border: '1px solid #d1d5db', borderRadius: 6, marginBottom: 12, resize: 'vertical' }}
-            />
+              disabled={!attrForm.roomType}
+            >
+              <option value="">{attrForm.roomType ? 'Select Room Sub Type' : 'Select Room Type first'}</option>
+              {roomSubTypes.map(subType => (
+                <option key={subType} value={subType}>{subType}</option>
+              ))}
+            </select>
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button
@@ -736,22 +968,83 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
               <button
                 onClick={() => {
                   if (!activeLayer) return;
-                  applyAttributesToLayer(activeLayer, attrForm);
-                  styleLayerByCategory(activeLayer, attrForm.category);
+                  
+                  if (activeLayer.feature?.properties?.timestamp) {
+                    // Editing existing feature - update properties and add edit timestamp
+                    const editTimestamp = new Date().toISOString();
+                    const editDate = new Date(editTimestamp).toLocaleString('en-GB', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+                    
+                    // Update the feature properties
+                    activeLayer.feature.properties = {
+                      ...activeLayer.feature.properties,
+                      ...attrForm,
+                      lastEdited: editTimestamp,
+                      lastEditedDate: editDate
+                    };
+                    
+                    // Update popup content
+                    const updatedHtml = `
+                      <div style="min-width: 200px">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                          <div style="font-weight: bold; color: #1F2937;">${attrForm.name || 'Unnamed feature'}</div>
+                          <button 
+                            onclick="window.editFeatureData('${activeLayer._leaflet_id}')"
+                            style="
+                              background: #3B82F6; 
+                              color: white; 
+                              border: none; 
+                              border-radius: 4px; 
+                              padding: 4px 6px; 
+                              cursor: pointer; 
+                              font-size: 12px;
+                              display: flex;
+                              align-items: center;
+                              gap: 4px;
+                            "
+                            title="Edit feature data"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                            Edit
+                          </button>
+                        </div>
+                        ${attrForm.roomType ? `<div style="margin-bottom: 4px;"><strong>Room Type:</strong> ${attrForm.roomType}</div>` : ''}
+                        ${attrForm.roomSubType ? `<div style="margin-bottom: 4px;"><strong>Room Sub Type:</strong> ${attrForm.roomSubType}</div>` : ''}
+                        <div style="margin-top: 8px; padding: 8px; background: #F3F4F6; border-radius: 4px; font-size: 12px; color: #6B7280;">
+                          <strong>Added:</strong> ${activeLayer.feature.properties.dateAdded}
+                          <br><strong>Last Edited:</strong> ${editDate}
+                        </div>
+                      </div>
+                    `;
+                    activeLayer.bindPopup(updatedHtml);
+                  } else {
+                    // New feature - apply attributes normally
+                    applyAttributesToLayer(activeLayer, attrForm);
+                  }
+                  
+                  // Apply styling even if no room type is selected (will use default color)
+                  styleLayerByRoomType(activeLayer, attrForm.roomType || '');
                   try { activeLayer.openPopup(); } catch {}
                   setShowAttrForm(false);
                   setActiveLayer(null);
                 }}
                 style={{ padding: '8px 12px', borderRadius: 6, background: '#3B82F6', color: '#fff', border: 'none', cursor: 'pointer' }}
               >
-                Save
+                {activeLayer?.feature?.properties?.timestamp ? 'Update' : 'Save'}
               </button>
             </div>
           </div>
         )}
 
         {/* Map Container */}
-        <div ref={mapElRef} style={{ width: '100%', height: '100%', backgroundColor: '#f0f0f0', border: '2px solid green' }} />
+        <div ref={mapElRef} style={{ width: '100%', height: '100%' }} />
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import { ImageTransformMapRef } from '../components/ImageTransformMap';
 export default function MapPage() {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [postcode, setPostcode] = useState<string | null>(null);
+  const [schoolType, setSchoolType] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPencilBubble, setShowPencilBubble] = useState(false);
   const [currentMode, setCurrentMode] = useState<'distort' | 'draw'>('distort');
@@ -16,9 +17,10 @@ export default function MapPage() {
   const mapRef = useRef<ImageTransformMapRef>(null);
 
   useEffect(() => {
-    // Get the uploaded image URL and postcode from sessionStorage
+    // Get the uploaded image URL, postcode, and school type from sessionStorage
     const imageUrl = sessionStorage.getItem('uploadedImageUrl');
     const storedPostcode = sessionStorage.getItem('postcode');
+    const storedSchoolType = sessionStorage.getItem('schoolType');
     
     if (!imageUrl) {
       // No image uploaded, redirect back to landing page
@@ -28,6 +30,7 @@ export default function MapPage() {
 
     setUploadedImageUrl(imageUrl);
     setPostcode(storedPostcode);
+    setSchoolType(storedSchoolType);
     setIsLoading(false);
   }, [router]);
 
@@ -35,6 +38,7 @@ export default function MapPage() {
     // Clear the stored data and go back to landing page
     sessionStorage.removeItem('uploadedImageUrl');
     sessionStorage.removeItem('postcode');
+    sessionStorage.removeItem('schoolType');
     router.push('/');
   };
 
@@ -167,6 +171,7 @@ export default function MapPage() {
       <ImageTransformMap 
         initialImageUrl={uploadedImageUrl} 
         postcode={postcode} 
+        schoolType={schoolType}
         currentMode={currentMode}
         ref={mapRef}
       />

@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 type FileType = 'image' | 'document' | 'other';
+type SchoolType = 'primary' | 'secondary' | 'special';
 
 export default function LandingPage() {
+  const [selectedSchoolType, setSelectedSchoolType] = useState<SchoolType>('primary');
   const [selectedFileType, setSelectedFileType] = useState<FileType>('image');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [postcode, setPostcode] = useState<string>('');
@@ -13,6 +15,16 @@ export default function LandingPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const router = useRouter();
+
+  const handleSchoolTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newSchoolType = event.target.value as SchoolType;
+    setSelectedSchoolType(newSchoolType);
+    // Reset other fields when school type changes
+    setSelectedFile(null);
+    setPostcode('');
+    setUploadedImageUrl(null);
+    setUploadError(null);
+  };
 
   const handleFileTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newType = event.target.value as FileType;
@@ -56,6 +68,7 @@ export default function LandingPage() {
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('fileType', selectedFileType);
+      formData.append('schoolType', selectedSchoolType);
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -84,9 +97,10 @@ export default function LandingPage() {
 
   const handleContinue = () => {
     if (uploadedImageUrl && selectedFileType === 'image' && postcode.trim()) {
-      // Store the image URL and postcode in sessionStorage and navigate to map
+      // Store the image URL, postcode, and school type in sessionStorage and navigate to map
       sessionStorage.setItem('uploadedImageUrl', uploadedImageUrl);
       sessionStorage.setItem('postcode', postcode.trim());
+      sessionStorage.setItem('schoolType', selectedSchoolType);
       router.push('/map');
     }
   };
@@ -130,6 +144,26 @@ export default function LandingPage() {
               </span>
             </h1>
             <p className="text-lg text-gray-600">Upload a file to get started with transformation tools</p>
+          </div>
+
+          {/* School Type Selection */}
+          <div className="mb-6">
+            <label htmlFor="school-type" className="block text-sm font-medium text-gray-700 mb-2">
+              Select School Type <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="school-type"
+              value={selectedSchoolType}
+              onChange={handleSchoolTypeChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+            >
+              <option value="primary">Primary School</option>
+              <option value="secondary">Secondary School</option>
+              <option value="special">Special Educational Needs School</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              This determines the room type options available for your project
+            </p>
           </div>
 
           {/* File Type Selection */}

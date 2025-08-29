@@ -13,13 +13,19 @@ export async function POST(req: Request) {
     const form = await req.formData();
     const file = form.get('file') as File | null;
     const fileType = form.get('fileType') as string | null;
+    const schoolType = form.get('schoolType') as string | null;
     
     if (!file) {
       console.log('No file in request');
       return NextResponse.json({ error: 'No file' }, { status: 400 });
     }
 
-    console.log('File received:', { name: file.name, type: file.type, size: file.size, fileType });
+    if (!schoolType) {
+      console.log('No school type in request');
+      return NextResponse.json({ error: 'No school type' }, { status: 400 });
+    }
+
+    console.log('File received:', { name: file.name, type: file.type, size: file.size, fileType, schoolType });
 
     // File size validation (10MB limit for all types)
     if (file.size > 10 * 1024 * 1024) {
@@ -93,7 +99,8 @@ export async function POST(req: Request) {
       originalName: file.name,
       size: file.size,
       type: file.type,
-      fileType: fileType
+      fileType: fileType,
+      schoolType: schoolType
     };
     
     console.log('Upload successful, returning:', response);

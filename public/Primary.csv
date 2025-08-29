@@ -1,0 +1,199 @@
+Room Type,Room Sub Type
+Classroom Areas,"Nursery playrooms (restrictive, extg)"
+Specialist Practical Areas,ICT-rich classrooms (extg primary)
+Hall Studio and Dining Areas,Dining halls
+Learning Resource Areas,School libraries (primary)
+Teaching Storage Areas,"Classroom stores, room (off classroom)"
+Non Teaching Storage Areas,Furniture stores
+Kitchen Areas,"Food prep areas, kitchen"
+Toilet Areas,"Changing rooms, with showers (pupils)"
+Plant Areas,Server rooms
+Circulation Areas,"Stairways, plant"
+Classroom Areas,Nursery playrooms
+Specialist Practical Areas,"Primary practical, temporarily ICT-rich"
+Hall Studio and Dining Areas,Informal dining spaces
+Learning Resource Areas,School libraries (infant)
+Teaching Storage Areas,"Classroom stores, bay (off classroom)"
+Non Teaching Storage Areas,"Furniture stores (chair/ table, off hall)"
+Kitchen Areas,"Food prep areas, kitchen (servery & wash-up)"
+Toilet Areas,Accessible (and staff) changing rooms
+Plant Areas,Server rooms (1-cabinet)
+Circulation Areas,"Stairways, plant (to roof)"
+Classroom Areas,Nursery playrooms (2 to 3 year olds)
+Specialist Practical Areas,"Kitchenettes, food bay"
+Hall Studio and Dining Areas,"Servery areas, meal collection"
+Learning Resource Areas,School libraries (junior)
+Teaching Storage Areas,"Classroom stores, room (off infants and juniors)"
+Non Teaching Storage Areas,"Furniture stores (chair, off hall)"
+Kitchen Areas,"Food prep areas, kitchen (prep/ servery suite)"
+Toilet Areas,"Changing rooms, ablutions and shoe space"
+Plant Areas,Server rooms (2-cabinet)
+Circulation Areas,"Stairways, plant (escape)"
+Classroom Areas,Nursery playrooms (extensive)
+Specialist Practical Areas,Primary practical (food/ science/ DT)
+Hall Studio and Dining Areas,"Servery areas, satellite"
+Learning Resource Areas,Faith spaces (chapel)
+Teaching Storage Areas,"Classroom stores, bay (off nursery)"
+Non Teaching Storage Areas,"Dining furniture stores, and servery"
+Kitchen Areas,"Offices, kitchen"
+Toilet Areas,Hygiene rooms
+Plant Areas,Server rooms (3-cabinet)
+Circulation Areas,Circulation spaces (horizontal)
+Classroom Areas,"Reception classrooms (restrictive, extg)"
+Specialist Practical Areas,Primary practical (infant food/ science/ DT)
+Hall Studio and Dining Areas,Social spaces
+Learning Resource Areas,Faith spaces (prayer room)
+Teaching Storage Areas,"Classroom stores, room (off reception)"
+Non Teaching Storage Areas,Retractable seating storage (off hall)
+Kitchen Areas,"Food stores, kitchen"
+Toilet Areas,Hygiene rooms (small 1 door)
+Plant Areas,Server rooms (4-cabinet)
+Circulation Areas,Corridors
+Classroom Areas,Reception classrooms
+Specialist Practical Areas,Primary practical (junior food/ science/ DT)
+Hall Studio and Dining Areas,"Music and drama classrooms, studio"
+Learning Resource Areas,Staff workrooms (sacristy)
+Teaching Storage Areas,Teaching resources stores (specialist)
+Non Teaching Storage Areas,"Cloakrooms, early years (50% circ)"
+Kitchen Areas,"Food stores, kitchen (dry)"
+Toilet Areas,"Hygiene rooms, small (2 doors)"
+Plant Areas,Server rooms (5-cabinet)
+Circulation Areas,Stairways   (area per floor)
+Classroom Areas,Reception classrooms (extensive)
+Specialist Practical Areas,Primary practical (food/ science)
+Hall Studio and Dining Areas,Activity studios (small hall)
+Learning Resource Areas,Music practice rooms
+Teaching Storage Areas,Teaching resources stores (off art room)
+Non Teaching Storage Areas,Coats and bags stores (coat hooks)
+Kitchen Areas,"Cold stores, kitchen"
+Toilet Areas,Supervisable toilets (early years)
+Plant Areas,Server rooms (ICT hub)
+Circulation Areas,"Lifts           (area per floor, incl space to wait)"
+Classroom Areas,"Infant classrooms (restrictive, extg)"
+Specialist Practical Areas,Primary practical (art/ DT)
+Hall Studio and Dining Areas,"Assembly halls, primary"
+Learning Resource Areas,Music practice rooms (extensive)
+Teaching Storage Areas,"Equipment stores, drama"
+Non Teaching Storage Areas,Coats and bags stores (lockers)
+Kitchen Areas,"Cold stores, kitchen (freezer)"
+Toilet Areas,Supervisable toilets (SEN)
+Plant Areas,Plant rooms
+Circulation Areas,Lobbies
+Classroom Areas,Infant classrooms
+Specialist Practical Areas,Primary practical (nurture)
+Hall Studio and Dining Areas,"Assembly halls, existing"
+Learning Resource Areas,Heavy practical resource (kiln)
+Teaching Storage Areas,General storerooms (off corridor)
+Non Teaching Storage Areas,Coats and bags stores (community lockers)
+Kitchen Areas,"Toilets, kitchen (with changing area)"
+Toilet Areas,"Toilets, suite (pupils)"
+Plant Areas,Plant rooms (heat source)
+Classroom Areas,Infant classrooms (extensive)
+Specialist Practical Areas,Primary SEN classrooms (ambulant)
+Hall Studio and Dining Areas,Indoor swimming pools (existing)
+Learning Resource Areas,Light practical resource (art/ design)
+Teaching Storage Areas,Teaching resources stores (IT/ GT off corridor)
+Non Teaching Storage Areas,"Equipment stores, appliance bay"
+Toilet Areas,"Toilets, suite (pupils, other)"
+Plant Areas,Plant rooms (ventilation)
+Classroom Areas,"Junior classrooms (restrictive, extg)"
+Hall Studio and Dining Areas,"Indoor activity spaces, other (existing)"
+Learning Resource Areas,Corridors (with art display)
+Teaching Storage Areas,Teaching resources stores (music)
+Non Teaching Storage Areas,Secure storerooms
+Toilet Areas,"Toilets, individual (pupil)"
+Plant Areas,Plant rooms (cold water tanks)
+Classroom Areas,Junior classrooms
+Hall Studio and Dining Areas,Climbing wall spaces (indoor)
+Learning Resource Areas,Small group rooms (nursery)
+Teaching Storage Areas,"Teaching resources stores, room (off library)"
+Non Teaching Storage Areas,General storerooms (central stock)
+Toilet Areas,"Toilets, individual (staff)"
+Plant Areas,Plant rooms (sprinkler pumps)
+Classroom Areas,Junior classrooms (extensive)
+Hall Studio and Dining Areas,"Activity studios, 1-court"
+Learning Resource Areas,Small group rooms
+Teaching Storage Areas,"Classroom stores, room (off SEN room)"
+Non Teaching Storage Areas,General storerooms (community)
+Toilet Areas,Accessible (and staff) toilets
+Plant Areas,Plant rooms (electrical intake)
+Classroom Areas,"Junior classrooms (without sink, extg)"
+Hall Studio and Dining Areas,"Sports halls, school (1-court)"
+Learning Resource Areas,Small group rooms (medium)
+Teaching Storage Areas,"Sports equipment stores, internal"
+Non Teaching Storage Areas,Cleaners' stores
+Toilet Areas,"Toilets, suite (staff)"
+Plant Areas,Services shafts (enclosed ventilation)
+Classroom Areas,Junior classrooms (group rooms)
+Hall Studio and Dining Areas,"Sports halls, school (2-court)"
+Learning Resource Areas,Small group rooms (large SEN etc.)
+Teaching Storage Areas,"Sports equipment stores, internal (sports hall)"
+Non Teaching Storage Areas,"Equipment stores, maintenance"
+Plant Areas,Services shafts (enclosed daylit ventilation)
+Classroom Areas,"Semi-open classbases, infant"
+Hall Studio and Dining Areas,"Sports halls, community (multi-court, extg)"
+Learning Resource Areas,SEN resource spaces
+Teaching Storage Areas,"Sports equipment stores, internal (community)"
+Plant Areas,Services shafts (enclosed electrical)
+Classroom Areas,"Semi-open classbases (junior, extg)"
+Hall Studio and Dining Areas,"Sports halls, community (4-court)"
+Learning Resource Areas,Small group rooms (inclusion/ withdrawal)
+Teaching Storage Areas,"Sports equipment stores, internal (activity studio)"
+Plant Areas,Services shafts (enclosed other)
+Classroom Areas,"Shared teaching areas, primary (infant)"
+Learning Resource Areas,Medical treatment (MI) rooms
+Teaching Storage Areas,"Sports equipment stores, internal (off hall)"
+Plant Areas,Light wells (open ventilation)
+Classroom Areas,"Shared teaching areas, primary (junior)"
+Learning Resource Areas,Therapy rooms
+Teaching Storage Areas,"Sports equipment stores, external"
+Plant Areas,Light wells (open daylit ventilation)
+Learning Resource Areas,SEN resource spaces (ambulant support)
+Learning Resource Areas,SEN resource spaces (SLCN support)
+Learning Resource Areas,SEN resource spaces (behaviour support)
+Learning Resource Areas,SEN resource spaces (autism support)
+Learning Resource Areas,SEN resource spaces (PD support)
+Learning Resource Areas,SEN resource spaces (HI support)
+Learning Resource Areas,SEN resource spaces (VI support)
+Learning Resource Areas,Sensory rooms (ambulant)
+Learning Resource Areas,Quiet calming spaces
+Staff and Admin Areas,Confidential meetings rooms (interview)
+Staff and Admin Areas,First aid rooms (sick room)
+Staff and Admin Areas,First aid posts (sick bay)
+Staff and Admin Areas,"Enclosed offices, with recep desk (only)"
+Staff and Admin Areas,"Enclosed offices, with recep window"
+Staff and Admin Areas,"Enclosed offices, with recep desk (and window)"
+Staff and Admin Areas,Reprographics rooms
+Staff and Admin Areas,"Work booths, MFD"
+Staff and Admin Areas,"Enclosed offices, admin (head)"
+Staff and Admin Areas,"Enclosed offices, admin (PA)"
+Staff and Admin Areas,"Kitchenettes, room"
+Staff and Admin Areas,"Kitchenettes, bay"
+Staff and Admin Areas,"Kitchenettes, bay (nursery)"
+Staff and Admin Areas,"Reception areas, entrance (50% circulation)"
+Staff and Admin Areas,"Reception areas, community (50% circulation)"
+Staff and Admin Areas,Offices
+Staff and Admin Areas,Offices (1-person)
+Staff and Admin Areas,Offices (2-person)
+Staff and Admin Areas,Offices (3-person)
+Staff and Admin Areas,Offices (4-person)
+Staff and Admin Areas,Offices (exams)
+Staff and Admin Areas,Offices (with meeting area)
+Staff and Admin Areas,"Offices (with meeting area, 1-person)"
+Staff and Admin Areas,"Offices (with meeting area, 2-person)"
+Staff and Admin Areas,"Offices (with meeting area, 3-person)"
+Staff and Admin Areas,Staff workrooms (technical support staff)
+Staff and Admin Areas,Staff workrooms (ICT technicians)
+Staff and Admin Areas,Staff workrooms (premises)
+Staff and Admin Areas,Offices (pastoral)
+Staff and Admin Areas,"Offices (pastoral, 1-person)"
+Staff and Admin Areas,"Offices (pastoral, 2-person)"
+Staff and Admin Areas,"Offices (SENco, learning support)"
+Staff and Admin Areas,Offices (visiting professionals)
+Staff and Admin Areas,Staff rooms (prep and social)
+Staff and Admin Areas,Staff rooms (social)
+Staff and Admin Areas,Staff workrooms (teaching staff)
+Staff and Admin Areas,Staff workrooms (specially resourced)
+Staff and Admin Areas,Staff workrooms (nursery)
+Staff and Admin Areas,Meeting rooms (conference)
+Staff and Admin Areas,Laundries
