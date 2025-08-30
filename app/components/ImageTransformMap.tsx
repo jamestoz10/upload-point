@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import * as turf from '@turf/turf';
 
 // CSS (OK to import in a client component)
 import 'leaflet/dist/leaflet.css';
@@ -56,7 +57,8 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
   const [attrForm, setAttrForm] = useState({
     name: '',
     roomType: '',
-    roomSubType: ''
+    roomSubType: '',
+    area: ''
   });
 
   // Load room types and sub types based on school type
@@ -163,15 +165,47 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
     }
   };
 
+  // Function to calculate area using Turf.js for accurate geodesic measurements
+  const calculateShapeArea = (layer: any): string => {
+    try {
+      // First, check if we already have a calculated area stored on the layer
+      if (layer._turfArea !== undefined) {
+        return layer._turfArea.toFixed(2);
+      }
+      
+      // Use Turf.js to calculate accurate area from GeoJSON
+      const geojson = layer.toGeoJSON();
+      if (geojson) {
+        const area = turf.area(geojson);
+        // Store the calculated area on the layer for future use
+        layer._turfArea = area;
+        console.log('Calculated area with Turf.js:', area, 'm²');
+        return area.toFixed(2);
+      }
+      
+      return 'N/A';
+    } catch (error) {
+      console.warn('Could not calculate area with Turf.js:', error);
+      return 'N/A';
+    }
+  };
+
   // Helper: attach attributes to a layer + popup
-  const applyAttributesToLayer = (layer: any, attrs: {name?: string; roomType?: string; roomSubType?: string}) => {
+  const applyAttributesToLayer = (layer: any, attrs: {name?: string; roomType?: string; roomSubType?: string; area?: string}) => {
     // Ensure a GeoJSON feature holder exists
     if (!layer.feature) layer.feature = { type: 'Feature', properties: {} };
+    
+    // Calculate area if not provided
+    let calculatedArea = attrs.area;
+    if (!calculatedArea) {
+      calculatedArea = calculateShapeArea(layer);
+    }
     
     // Add timestamp when attributes are applied
     const timestamp = new Date().toISOString();
     const propertiesWithTimestamp = { 
       ...attrs, 
+      area: calculatedArea,
       timestamp: timestamp,
       dateAdded: new Date(timestamp).toLocaleString('en-GB', {
         day: '2-digit',
@@ -213,6 +247,7 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
         </div>
         ${attrs.roomType ? `<div style="margin-bottom: 4px;"><strong>Room Type:</strong> ${attrs.roomType}</div>` : ''}
         ${attrs.roomSubType ? `<div style="margin-bottom: 4px;"><strong>Room Sub Type:</strong> ${attrs.roomSubType}</div>` : ''}
+        <div style="margin-bottom: 4px;"><strong>Area:</strong> ${calculatedArea} m²</div>
         <div style="margin-top: 8px; padding: 8px; background: #F3F4F6; border-radius: 4px; font-size: 12px; color: #6B7280;">
           <strong>Added:</strong> ${propertiesWithTimestamp.dateAdded}
         </div>
@@ -226,6 +261,8 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
       try { layer.openPopup(); } catch {}
     });
   };
+
+
 
   // Function to edit feature data (called from popup)
   const editFeatureData = (leafletId: string) => {
@@ -244,7 +281,8 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
       setAttrForm({
         name: props.name || '',
         roomType: props.roomType || '',
-        roomSubType: props.roomSubType || ''
+        roomSubType: props.roomSubType || '',
+        area: props.area || ''
       });
       setShowAttrForm(true);
       
@@ -256,11 +294,12 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
   // Expose editFeatureData function globally for popup buttons
   useEffect(() => {
     (window as any).editFeatureData = editFeatureData;
+    console.log('editFeatureData function exposed to window');
     
     return () => {
       delete (window as any).editFeatureData;
     };
-  }, []);
+  }, [editFeatureData]);
 
   // Optional: style by room type (tweak to taste)
   const styleLayerByRoomType = (layer: any, roomType: string) => {
@@ -554,6 +593,9 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
           zoomControl: false
         });
         mapRef.current = map;
+        
+        // Store map instance globally for popup access
+        (window as any).currentMapInstance = map;
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 20,
@@ -574,6 +616,9 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
             const drawnItems = new (L as any).FeatureGroup();
             map.addLayer(drawnItems);
             drawnItemsRef.current = drawnItems;
+            
+            // Store drawnItems on map for popup access
+            map._drawnItems = drawnItems;
 
             // Initialize the draw control
             const drawControl = new (L as any).Control.Draw({
@@ -624,10 +669,91 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
             drawControlRef.current = drawControl;
             drawControlActiveRef.current = false; // Start with draw control hidden in distort mode
 
+            // Listen for drawing events to capture area measurements with Turf.js
+            map.on('draw:created', (e: any) => {
+              const layer = e.layer;
+              try {
+                // Use Turf.js to calculate accurate area
+                const geojson = layer.toGeoJSON();
+                if (geojson) {
+                  const area = turf.area(geojson);
+                  layer._turfArea = area;
+                  console.log('Turf.js calculated area for new layer:', area, 'm²');
+                }
+              } catch (error) {
+                console.warn('Could not calculate area with Turf.js for new layer:', error);
+              }
+            });
+
+            // Listen for drawing edits to recalculate area
+            map.on('draw:edited', (e: any) => {
+              e.layers.eachLayer((layer: any) => {
+                try {
+                  const geojson = layer.toGeoJSON();
+                  if (geojson) {
+                    const area = turf.area(geojson);
+                    layer._turfArea = area;
+                    console.log('Updated Turf.js area after edit:', area, 'm²');
+                    
+                    // Update popup if it exists
+                    if (layer.getPopup()) {
+                      const props = layer.feature?.properties;
+                      if (props) {
+                        // Update the area in properties and refresh popup
+                        props.area = area.toFixed(2);
+                        applyAttributesToLayer(layer, props);
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.warn('Could not recalculate area after edit:', error);
+                }
+              });
+            });
+
+            // Optional: Live area calculation while drawing (for real-time feedback)
+            map.on('draw:drawvertex', (e: any) => {
+              try {
+                // Get the current drawing layer if available
+                const layers = e.layers._layers;
+                if (layers && Object.keys(layers).length > 2) { // Need at least 3 points for area
+                  const coords = Object.values(layers).map((marker: any) => [
+                    marker.getLatLng().lng, 
+                    marker.getLatLng().lat
+                  ]);
+                  
+                  if (coords.length > 2) {
+                    // Close the polygon ring for Turf.js
+                    const closedCoords = [...coords, coords[0]];
+                    const polygon = turf.polygon([closedCoords]);
+                    const area = turf.area(polygon);
+                    console.log('Live Turf.js area while drawing:', area, 'm²');
+                  }
+                }
+              } catch (error) {
+                // Silently ignore errors during live calculation
+              }
+            });
+
             // Ensure any existing/new layers show their info on click
             drawnItems.on('layeradd', (e: any) => {
               const layer = e.layer;
               if (!layer) return;
+              
+              // Calculate area with Turf.js if not already calculated
+              if (layer._turfArea === undefined) {
+                try {
+                  const geojson = layer.toGeoJSON();
+                  if (geojson) {
+                    const area = turf.area(geojson);
+                    layer._turfArea = area;
+                    console.log('Calculated area with Turf.js for added layer:', area, 'm²');
+                  }
+                } catch (error) {
+                  console.warn('Could not calculate area with Turf.js for added layer:', error);
+                }
+              }
+              
               // If it already has properties, ensure popup is bound
               const props = layer.feature?.properties;
               if (props) applyAttributesToLayer(layer, props);
@@ -639,15 +765,84 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
               const layer = e.layer;
               
               // Add the drawn layer to the FeatureGroup
-              drawnItems.addLayer(layer);
+              drawnItemsRef.current?.addLayer(layer);
               
-              // Open the attribute form
-              setActiveLayer(layer);
-              setAttrForm({ name: '', roomType: '', roomSubType: '' });
-              setShowAttrForm(true);
+                              // Calculate area using Turf.js for accuracy
+                const calculatedArea = calculateShapeArea(layer);
+                
+                // Store function to open form for this specific layer
+                const openFormForLayer = () => {
+                  setActiveLayer(layer);
+                  setAttrForm({ 
+                    name: '', 
+                    roomType: '', 
+                    roomSubType: '', 
+                    area: calculatedArea !== 'N/A' ? calculatedArea : '' 
+                  });
+                  setShowAttrForm(true);
+                  // Close the popup when opening the form
+                  try { layer.closePopup(); } catch {}
+                };
+                
+                // Store the function on the layer for the popup to access
+                layer._openForm = openFormForLayer;
+                
+                // Automatically open the form
+                openFormForLayer();
 
-              // Optional: give a temporary popup hint
-              layer.bindPopup('<em>Fill in details using the form…</em>');
+              // Give a temporary popup with edit button that calls the stored function
+              const tempHtml = `
+                <div style="margin: -8px; padding: 8px; text-align: center;">
+                  <div style="margin-bottom: 6px; font-style: italic; color: #6B7280; font-size: 12px;">Complete the form</div>
+                  <button 
+                    onclick="
+                      console.log('Edit button clicked for layer:', '${layer._leaflet_id}');
+                      try {
+                        // Find the layer using the drawItems reference and call its stored function
+                        const map = window.currentMapInstance;
+                        if (map && map._drawnItems) {
+                          let foundLayer = null;
+                          map._drawnItems.eachLayer(function(l) {
+                            if (l._leaflet_id === ${layer._leaflet_id}) {
+                              foundLayer = l;
+                            }
+                          });
+                          if (foundLayer && foundLayer._openForm) {
+                            foundLayer._openForm();
+                            return;
+                          }
+                        }
+                        // Fallback to global function
+                        if (window.editFeatureData) {
+                          window.editFeatureData('${layer._leaflet_id}');
+                        }
+                      } catch (e) {
+                        console.error('Error opening form:', e);
+                      }
+                    "
+                    style="
+                      background: #3B82F6; 
+                      color: white; 
+                      border: none; 
+                      border-radius: 4px; 
+                      padding: 4px 8px; 
+                      cursor: pointer; 
+                      font-size: 11px;
+                      display: flex;
+                      align-items: center;
+                      gap: 3px;
+                      margin: 0 auto;
+                    "
+                    title="Complete feature details"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                    Edit
+                  </button>
+                </div>
+              `;
+              layer.bindPopup(tempHtml);
               
               console.log('Drawing created:', { type, layer });
             });
@@ -954,6 +1149,24 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
               ))}
             </select>
 
+            <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Area (m²)</label>
+            <input
+              type="text"
+              value={attrForm.area}
+              onChange={(e) => {
+                // Allow only numbers, decimals, and backspace
+                const value = e.target.value;
+                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                  setAttrForm((s) => ({ ...s, area: value }));
+                }
+              }}
+              placeholder="e.g. 100.5"
+              style={{ width: '100%', padding: 8, border: '1px solid #d1d5db', borderRadius: 6, marginBottom: 8 }}
+            />
+            <p style={{ fontSize: 11, color: '#6B7280', marginBottom: 12, fontStyle: 'italic' }}>
+              Area is automatically calculated from your drawing. You can edit this value if needed.
+            </p>
+
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button
                 onClick={() => {
@@ -970,23 +1183,43 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
                   if (!activeLayer) return;
                   
                   if (activeLayer.feature?.properties?.timestamp) {
-                    // Editing existing feature - update properties and add edit timestamp
-                    const editTimestamp = new Date().toISOString();
-                    const editDate = new Date(editTimestamp).toLocaleString('en-GB', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    });
+                    // Editing existing feature - check if data has actually changed
+                    const currentProps = activeLayer.feature.properties;
+                    const hasChanged = 
+                      currentProps.name !== attrForm.name ||
+                      currentProps.roomType !== attrForm.roomType ||
+                      currentProps.roomSubType !== attrForm.roomSubType ||
+                      currentProps.area !== attrForm.area;
+                    
+                    let updatedProperties = {
+                      ...activeLayer.feature.properties,
+                      ...attrForm
+                    };
+                    
+                    // Only add edit timestamp if data has actually changed
+                    if (hasChanged) {
+                      const editTimestamp = new Date().toISOString();
+                      const editDate = new Date(editTimestamp).toLocaleString('en-GB', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      });
+                      
+                      updatedProperties = {
+                        ...updatedProperties,
+                        lastEdited: editTimestamp,
+                        lastEditedDate: editDate
+                      };
+                      
+                      console.log('Feature data changed, updating edit timestamp');
+                    } else {
+                      console.log('No changes detected, keeping original timestamps');
+                    }
                     
                     // Update the feature properties
-                    activeLayer.feature.properties = {
-                      ...activeLayer.feature.properties,
-                      ...attrForm,
-                      lastEdited: editTimestamp,
-                      lastEditedDate: editDate
-                    };
+                    activeLayer.feature.properties = updatedProperties;
                     
                     // Update popup content
                     const updatedHtml = `
@@ -1017,9 +1250,10 @@ const ImageTransformMap = forwardRef<ImageTransformMapRef, ImageTransformMapProp
                         </div>
                         ${attrForm.roomType ? `<div style="margin-bottom: 4px;"><strong>Room Type:</strong> ${attrForm.roomType}</div>` : ''}
                         ${attrForm.roomSubType ? `<div style="margin-bottom: 4px;"><strong>Room Sub Type:</strong> ${attrForm.roomSubType}</div>` : ''}
+                        <div style="margin-bottom: 4px;"><strong>Area:</strong> ${attrForm.area || 'N/A'} m²</div>
                         <div style="margin-top: 8px; padding: 8px; background: #F3F4F6; border-radius: 4px; font-size: 12px; color: #6B7280;">
                           <strong>Added:</strong> ${activeLayer.feature.properties.dateAdded}
-                          <br><strong>Last Edited:</strong> ${editDate}
+                          ${updatedProperties.lastEditedDate ? `<br><strong>Last Edited:</strong> ${updatedProperties.lastEditedDate}` : ''}
                         </div>
                       </div>
                     `;
